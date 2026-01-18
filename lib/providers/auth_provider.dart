@@ -24,6 +24,6 @@ final currentUserDataProvider = FutureProvider<UserModel?>((ref) async {
       return null;
     },
     loading: () => null,
-    error: (_, __) => null,
+    error: (error, stack) => null,
   );
 });
