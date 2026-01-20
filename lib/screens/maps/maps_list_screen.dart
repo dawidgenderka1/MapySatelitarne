@@ -67,9 +67,7 @@ class MapsListScreen extends ConsumerWidget {
                     isThreeLine: true,
                     trailing: const Icon(Icons.arrow_forward_ios),
                     onTap: () {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text('Szczegóły mapy: ${map.id}')),
-                      );
+                      context.go('/map/${map.id}');
                     },
                   ),
                 );
