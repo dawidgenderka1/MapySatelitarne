@@ -4,15 +4,35 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import '../../providers/maps_provider.dart';
 import '../../providers/auth_provider.dart';
+import '../../providers/user_provider.dart';
 
-class MapDetailScreen extends ConsumerWidget {
+class MapDetailScreen extends ConsumerStatefulWidget {
   final String mapId;
 
   const MapDetailScreen({super.key, required this.mapId});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final mapAsync = ref.watch(mapProvider(mapId));
+  ConsumerState<MapDetailScreen> createState() => _MapDetailScreenState();
+}
+
+class _MapDetailScreenState extends ConsumerState<MapDetailScreen> {
+  @override
+  void initState() {
+    super.initState();
+    Future.microtask(() async {
+      try {
+        await ref.read(cloudFunctionsServiceProvider).recordMapView(widget.mapId);
+        // Invalidate the provider to refetch the updated data
+        ref.invalidate(mapProvider(widget.mapId));
+      } catch (e) {
+        print('Błąd rejestracji wyświetlenia: $e');
+      }
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final mapAsync = ref.watch(mapProvider(widget.mapId));
     final currentUser = ref.watch(authStateProvider).value;
 
     return Scaffold(
@@ -31,15 +51,13 @@ class MapDetailScreen extends ConsumerWidget {
             );
           }
 
-          ref.read(firestoreServiceProvider).incrementViewCount(mapId);
-
           return SingleChildScrollView(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 GestureDetector(
                   onTap: () {
-                    context.go('/map/$mapId/view?imageUrl=${Uri.encodeComponent(map.storageUrl)}&title=${Uri.encodeComponent(map.metadata.title)}');
+                    context.go('/map/${widget.mapId}/view?imageUrl=${Uri.encodeComponent(map.storageUrl)}&title=${Uri.encodeComponent(map.metadata.title)}');
                   },
                   child: Container(
                     height: 300,
@@ -130,7 +148,7 @@ class MapDetailScreen extends ConsumerWidget {
                           width: double.infinity,
                           child: ElevatedButton.icon(
                             onPressed: () {
-                              context.go('/map/$mapId/edit-metadata');
+                              context.go('/map/${widget.mapId}/edit-metadata');
                             },
                             icon: const Icon(Icons.edit),
                             label: const Text('Edytuj metadane'),
