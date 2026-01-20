@@ -7,7 +7,6 @@ class SatelliteMap {
   final DateTime uploadedAt;
   final String uploadedBy;
   final String storageUrl;
-  final String? thumbnailUrl;
   final bool isPublic;
   final MapMetadata metadata;
   final GeneratedMetadata generatedMetadata;
@@ -19,7 +18,6 @@ class SatelliteMap {
     required this.uploadedAt,
     required this.uploadedBy,
     required this.storageUrl,
-    this.thumbnailUrl,
     required this.isPublic,
     required this.metadata,
     required this.generatedMetadata,
@@ -34,7 +32,6 @@ class SatelliteMap {
       uploadedAt: (data['uploadedAt'] as Timestamp).toDate(),
       uploadedBy: data['uploadedBy'] ?? '',
       storageUrl: data['storageUrl'] ?? '',
-      thumbnailUrl: data['thumbnailUrl'],
       isPublic: data['isPublic'] ?? false,
       metadata: MapMetadata.fromMap(data['metadata'] ?? {}),
       generatedMetadata: GeneratedMetadata.fromMap(data['generatedMetadata'] ?? {}),
@@ -48,7 +45,6 @@ class SatelliteMap {
       'uploadedAt': Timestamp.fromDate(uploadedAt),
       'uploadedBy': uploadedBy,
       'storageUrl': storageUrl,
-      'thumbnailUrl': thumbnailUrl,
       'isPublic': isPublic,
       'metadata': metadata.toMap(),
       'generatedMetadata': generatedMetadata.toMap(),
