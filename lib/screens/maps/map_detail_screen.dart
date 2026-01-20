@@ -33,7 +33,7 @@ class _MapDetailScreenState extends ConsumerState<MapDetailScreen> {
   @override
   Widget build(BuildContext context) {
     final mapAsync = ref.watch(mapProvider(widget.mapId));
-    final currentUser = ref.watch(authStateProvider).value;
+    final userDataAsync = ref.watch(currentUserDataProvider);
 
     return Scaffold(
       appBar: AppBar(
@@ -143,7 +143,7 @@ class _MapDetailScreenState extends ConsumerState<MapDetailScreen> {
                           null,
                         ),
                       const SizedBox(height: 16),
-                      if (currentUser?.isAnonymous == false)
+                      if (userDataAsync.value?.canEdit == true)
                         SizedBox(
                           width: double.infinity,
                           child: ElevatedButton.icon(
