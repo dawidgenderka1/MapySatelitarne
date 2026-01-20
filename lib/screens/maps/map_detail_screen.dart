@@ -18,6 +18,10 @@ class MapDetailScreen extends ConsumerWidget {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Szczegóły mapy'),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () => context.go('/maps'),
+        ),
       ),
       body: mapAsync.when(
         data: (map) {

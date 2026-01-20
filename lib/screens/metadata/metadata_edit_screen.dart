@@ -81,6 +81,10 @@ class _MetadataEditScreenState extends ConsumerState<MetadataEditScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Edycja metadanych'),
+        leading: IconButton(
+          icon: const Icon(Icons.close),
+          onPressed: () => context.go('/map/${widget.mapId}'),
+        ),
       ),
       body: mapAsync.when(
         data: (map) {
