@@ -6,6 +6,7 @@ import '../../providers/maps_provider.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/user_provider.dart';
 import '../../services/image_url_service.dart';
+import '../../models/satellite_map.dart';
 
 class MapDetailScreen extends ConsumerStatefulWidget {
   final String mapId;
@@ -35,6 +36,8 @@ class _MapDetailScreenState extends ConsumerState<MapDetailScreen> {
   Widget build(BuildContext context) {
     final mapAsync = ref.watch(mapProvider(widget.mapId));
     final userDataAsync = ref.watch(currentUserDataProvider);
+    final authState = ref.watch(authStateProvider);
+    final isAnonymous = authState.value?.isAnonymous ?? true;
 
     return Scaffold(
       appBar: AppBar(
@@ -127,56 +130,92 @@ class _MapDetailScreenState extends ConsumerState<MapDetailScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
-                        map.metadata.title,
-                        style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        map.metadata.description,
-                        style: Theme.of(context).textTheme.bodyLarge,
-                      ),
-                      const SizedBox(height: 24),
-                      const Text(
-                        'Metadane',
-                        style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                      ),
-                      const Divider(),
-                      _buildMetadataRow('Źródło', map.metadata.source, map.metadataDescriptions['source']),
-                      _buildMetadataRow('Region', map.metadata.region, map.metadataDescriptions['region']),
-                      _buildMetadataRow(
-                        'Data pozyskania',
-                        DateFormat('dd.MM.yyyy').format(map.metadata.acquisitionDate),
-                        null,
-                      ),
-                      _buildMetadataRow('Nazwa pliku', map.fileName, null),
-                      const SizedBox(height: 16),
-                      const Text(
-                        'Statystyki',
-                        style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                      ),
-                      const Divider(),
-                      _buildMetadataRow('Wyświetlenia', map.generatedMetadata.viewCount.toString(), null),
-                      if (map.generatedMetadata.lastViewed != null)
-                        _buildMetadataRow(
-                          'Ostatnio oglądana',
-                          DateFormat('dd.MM.yyyy HH:mm').format(map.generatedMetadata.lastViewed!),
-                          null,
-                        ),
-                      const SizedBox(height: 16),
-                      if (userDataAsync.value?.canEdit == true)
-                        SizedBox(
-                          width: double.infinity,
-                          child: ElevatedButton.icon(
-                            onPressed: () {
-                              context.go('/map/${widget.mapId}/edit-metadata');
-                            },
-                            icon: const Icon(Icons.edit),
-                            label: const Text('Edytuj metadane'),
+                      if (isAnonymous) ...[
+                        const Card(
+                          color: Colors.blue,
+                          child: Padding(
+                            padding: EdgeInsets.all(16.0),
+                            child: Row(
+                              children: [
+                                Icon(Icons.info_outline, color: Colors.white),
+                                SizedBox(width: 12),
+                                Expanded(
+                                  child: Text(
+                                    'Zaloguj się aby zobaczyć metadane mapy',
+                                    style: TextStyle(color: Colors.white, fontSize: 14),
+                                  ),
+                                ),
+                              ],
+                            ),
                           ),
                         ),
+                      ] else ...[
+                        Text(
+                          map.metadata.title,
+                          style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          map.metadata.description,
+                          style: Theme.of(context).textTheme.bodyLarge,
+                        ),
+                        const SizedBox(height: 24),
+                        const Text(
+                          'Metadane',
+                          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                        ),
+                        const Divider(),
+                        _buildMetadataRow('Źródło', map.metadata.source, map.metadataDescriptions['source']),
+                        _buildMetadataRow('Region', map.metadata.region, map.metadataDescriptions['region']),
+                        _buildMetadataRow(
+                          'Data pozyskania',
+                          DateFormat('dd.MM.yyyy').format(map.metadata.acquisitionDate),
+                          null,
+                        ),
+                        _buildMetadataRow('Nazwa pliku', map.fileName, null),
+                        const SizedBox(height: 16),
+                        const Text(
+                          'Statystyki',
+                          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                        ),
+                        const Divider(),
+                        _buildMetadataRow('Wyświetlenia', map.generatedMetadata.viewCount.toString(), null),
+                        if (map.generatedMetadata.lastViewed != null)
+                          _buildMetadataRow(
+                            'Ostatnio oglądana',
+                            DateFormat('dd.MM.yyyy HH:mm').format(map.generatedMetadata.lastViewed!),
+                            null,
+                          ),
+                        const SizedBox(height: 16),
+                        if (userDataAsync.value?.canEdit == true)
+                          SizedBox(
+                            width: double.infinity,
+                            child: ElevatedButton.icon(
+                              onPressed: () {
+                                context.go('/map/${widget.mapId}/edit-metadata');
+                              },
+                              icon: const Icon(Icons.edit),
+                              label: const Text('Edytuj metadane'),
+                            ),
+                          ),
+                        if (userDataAsync.value?.canDelete == true) ...[
+                          const SizedBox(height: 12),
+                          SizedBox(
+                            width: double.infinity,
+                            child: ElevatedButton.icon(
+                              onPressed: () => _showDeleteConfirmation(context, map),
+                              icon: const Icon(Icons.delete),
+                              label: const Text('Usuń mapę'),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.red,
+                                foregroundColor: Colors.white,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ],
                     ],
                   ),
                 ),
@@ -241,5 +280,54 @@ class _MapDetailScreenState extends ConsumerState<MapDetailScreen> {
         ],
       ),
     );
+  }
+
+  Future<void> _showDeleteConfirmation(BuildContext context, SatelliteMap map) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Usuń mapę'),
+        content: Text('Czy na pewno chcesz usunąć mapę "${map.metadata.title}"? Ta operacja jest nieodwracalna.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('Anuluj'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            style: TextButton.styleFrom(foregroundColor: Colors.red),
+            child: const Text('Usuń'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true && context.mounted) {
+      try {
+        final storageService = ref.read(storageServiceProvider);
+        final firestoreService = ref.read(firestoreServiceProvider);
+
+        final fileName = map.storageUrl.split('/o/')[1].split('?')[0];
+        final decodedFileName = Uri.decodeComponent(fileName);
+        
+        await storageService.deleteFile(decodedFileName);
+        await firestoreService.deleteMap(widget.mapId);
+
+        ref.invalidate(mapsStreamProvider);
+
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Mapa została usunięta')),
+          );
+          context.go('/maps');
+        }
+      } catch (e) {
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Błąd usuwania: $e')),
+          );
+        }
+      }
+    }
   }
 }
