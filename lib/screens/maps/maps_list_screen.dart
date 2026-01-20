@@ -10,7 +10,7 @@ class MapsListScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final mapsAsync = ref.watch(mapsStreamProvider);
-    final authState = ref.watch(authStateProvider);
+    final userDataAsync = ref.watch(currentUserDataProvider);
 
     return Scaffold(
       appBar: AppBar(
@@ -92,12 +92,10 @@ class MapsListScreen extends ConsumerWidget {
           ),
         ),
       ),
-      floatingActionButton: authState.value?.isAnonymous == false
+      floatingActionButton: userDataAsync.value?.canDelete == true
           ? FloatingActionButton(
               onPressed: () {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Upload będzie dostępny wkrótce')),
-                );
+                context.go('/upload');
               },
               child: const Icon(Icons.add),
             )

@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:typed_data';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:path/path.dart' as path;
 
@@ -49,6 +50,30 @@ class StorageService {
       final progress = snapshot.bytesTransferred / snapshot.totalBytes;
       onProgress?.call(progress);
     });
+    
+    final snapshot = await uploadTask;
+    return await snapshot.ref.getDownloadURL();
+  }
+
+  Future<String> uploadMapBytes({
+    required String mapId,
+    required Uint8List imageBytes,
+    required String fileName,
+    Function(double)? onProgress,
+  }) async {
+    final ref = _storage.ref().child('satellite_maps/$fileName');
+    
+    final uploadTask = ref.putData(
+      imageBytes,
+      SettableMetadata(contentType: 'image/jpeg'),
+    );
+    
+    if (onProgress != null) {
+      uploadTask.snapshotEvents.listen((TaskSnapshot snapshot) {
+        final progress = snapshot.bytesTransferred / snapshot.totalBytes;
+        onProgress(progress);
+      });
+    }
     
     final snapshot = await uploadTask;
     return await snapshot.ref.getDownloadURL();

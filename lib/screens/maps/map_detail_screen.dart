@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 import '../../providers/maps_provider.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/user_provider.dart';
+import '../../services/image_url_service.dart';
 
 class MapDetailScreen extends ConsumerStatefulWidget {
   final String mapId;
@@ -57,7 +58,7 @@ class _MapDetailScreenState extends ConsumerState<MapDetailScreen> {
               children: [
                 GestureDetector(
                   onTap: () {
-                    context.go('/map/${widget.mapId}/view?imageUrl=${Uri.encodeComponent(map.storageUrl)}&title=${Uri.encodeComponent(map.metadata.title)}');
+                    context.push('/map/${widget.mapId}/view?imageUrl=${Uri.encodeComponent(map.storageUrl)}&title=${Uri.encodeComponent(map.metadata.title)}');
                   },
                   child: Container(
                     height: 300,
@@ -66,11 +67,33 @@ class _MapDetailScreenState extends ConsumerState<MapDetailScreen> {
                       fit: StackFit.expand,
                       children: [
                         Image.network(
-                          map.storageUrl,
+                          ImageUrlService.getProxiedUrl(map.storageUrl),
                           fit: BoxFit.cover,
+                          loadingBuilder: (context, child, loadingProgress) {
+                            if (loadingProgress == null) return child;
+                            return Center(
+                              child: CircularProgressIndicator(
+                                value: loadingProgress.expectedTotalBytes != null
+                                    ? loadingProgress.cumulativeBytesLoaded / loadingProgress.expectedTotalBytes!
+                                    : null,
+                              ),
+                            );
+                          },
                           errorBuilder: (context, error, stackTrace) {
-                            return const Center(
-                              child: Icon(Icons.image_not_supported, size: 60),
+                            print('Błąd ładowania obrazu: $error');
+                            print('URL: ${map.storageUrl}');
+                            return Center(
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  const Icon(Icons.image_not_supported, size: 60, color: Colors.red),
+                                  const SizedBox(height: 8),
+                                  Text(
+                                    'Nie można załadować obrazu',
+                                    style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                                  ),
+                                ],
+                              ),
                             );
                           },
                         ),
