@@ -12,6 +12,8 @@ class SatelliteMap {
   final GeneratedMetadata generatedMetadata;
   final Map<String, String> metadataDescriptions;
 
+  final Map<String, dynamic> extraMetadata;
+
   SatelliteMap({
     required this.id,
     required this.fileName,
@@ -22,6 +24,8 @@ class SatelliteMap {
     required this.metadata,
     required this.generatedMetadata,
     required this.metadataDescriptions,
+
+    this.extraMetadata = const {},
   });
 
   factory SatelliteMap.fromFirestore(DocumentSnapshot doc) {
@@ -36,6 +40,10 @@ class SatelliteMap {
       metadata: MapMetadata.fromMap(data['metadata'] ?? {}),
       generatedMetadata: GeneratedMetadata.fromMap(data['generatedMetadata'] ?? {}),
       metadataDescriptions: Map<String, String>.from(data['metadataDescriptions'] ?? {}),
+
+      extraMetadata: data['extraMetadata'] != null
+          ? Map<String, dynamic>.from(data['extraMetadata'] as Map)
+          : const {},
     );
   }
 
@@ -49,6 +57,7 @@ class SatelliteMap {
       'metadata': metadata.toMap(),
       'generatedMetadata': generatedMetadata.toMap(),
       'metadataDescriptions': metadataDescriptions,
+      'extraMetadata': extraMetadata,
     };
   }
 }

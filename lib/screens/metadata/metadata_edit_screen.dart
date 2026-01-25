@@ -20,6 +20,8 @@ class _MetadataEditScreenState extends ConsumerState<MetadataEditScreen> {
   late TextEditingController _sourceController;
   late TextEditingController _regionController;
   bool _isLoading = false;
+  final List<TextEditingController> _extraKeyControllers = [];
+  final List<TextEditingController> _extraValueControllers = [];
 
   @override
   void initState() {
@@ -36,11 +38,70 @@ class _MetadataEditScreenState extends ConsumerState<MetadataEditScreen> {
     _descriptionController.dispose();
     _sourceController.dispose();
     _regionController.dispose();
+
+    for (final c in _extraKeyControllers) {
+      c.dispose();
+    }
+    for (final c in _extraValueControllers) {
+      c.dispose();
+    }
+
     super.dispose();
+  }
+
+  void _addExtraField({String key = '', String value = ''}) {
+    setState(() {
+      _extraKeyControllers.add(TextEditingController(text: key));
+      _extraValueControllers.add(TextEditingController(text: value));
+    });
+  }
+
+  void _removeExtraField(int index) {
+    setState(() {
+      _extraKeyControllers[index].dispose();
+      _extraValueControllers[index].dispose();
+      _extraKeyControllers.removeAt(index);
+      _extraValueControllers.removeAt(index);
+    });
+  }
+
+  Map<String, dynamic> _buildExtraMetadataMap() {
+    final Map<String, dynamic> result = {};
+    for (int i = 0; i < _extraKeyControllers.length; i++) {
+      final key = _extraKeyControllers[i].text.trim();
+      final value = _extraValueControllers[i].text.trim();
+      if (key.isEmpty) continue;
+      result[key] = value;
+    }
+    return result;
+  }
+
+  String? _validateExtraKeysUnique() {
+    final seen = <String>{};
+    for (final c in _extraKeyControllers) {
+      final k = c.text.trim();
+      if (k.isEmpty) continue;
+      final lower = k.toLowerCase();
+      if (seen.contains(lower)) {
+        return 'Klucze w dodatkowych metadanych nie mogą się powtarzać (duplikat: "$k").';
+      }
+      seen.add(lower);
+    }
+    return null;
   }
 
   Future<void> _saveMetadata() async {
     if (!_formKey.currentState!.validate()) return;
+
+    final extraErr = _validateExtraKeysUnique();
+    if (extraErr != null) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(extraErr)),
+        );
+      }
+      return;
+    }
 
     setState(() => _isLoading = true);
 
@@ -50,10 +111,14 @@ class _MetadataEditScreenState extends ConsumerState<MetadataEditScreen> {
         description: _descriptionController.text,
         source: _sourceController.text,
         region: _regionController.text,
+
         acquisitionDate: DateTime.now(),
       );
 
       await ref.read(firestoreServiceProvider).updateMetadata(widget.mapId, metadata);
+      final extraMetadata = _buildExtraMetadataMap();
+
+      await ref.read(firestoreServiceProvider).updateExtraMetadata(widget.mapId, extraMetadata);
 
       ref.invalidate(mapProvider(widget.mapId));
 
@@ -97,6 +162,19 @@ class _MetadataEditScreenState extends ConsumerState<MetadataEditScreen> {
             _descriptionController.text = map.metadata.description;
             _sourceController.text = map.metadata.source;
             _regionController.text = map.metadata.region;
+
+            if (_extraKeyControllers.isEmpty && _extraValueControllers.isEmpty) {
+              final extra = map.extraMetadata;
+              final keys = extra.keys.toList()
+                ..sort((a, b) => a.toLowerCase().compareTo(b.toLowerCase()));
+              for (final k in keys) {
+                _addExtraField(key: k, value: (extra[k] ?? '').toString());
+              }
+
+              if (keys.isEmpty) {
+                _addExtraField();
+              }
+            }
           }
 
           return SingleChildScrollView(
@@ -159,6 +237,69 @@ class _MetadataEditScreenState extends ConsumerState<MetadataEditScreen> {
                       return null;
                     },
                   ),
+
+                  const SizedBox(height: 24),
+                  Row(
+                    children: [
+                      const Expanded(
+                        child: Text(
+                          'Dodatkowe metadane (opcjonalne)',
+                          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                        ),
+                      ),
+                      TextButton.icon(
+                        onPressed: _isLoading ? null : () => _addExtraField(),
+                        icon: const Icon(Icons.add),
+                        label: const Text('Dodaj'),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+
+                  for (int i = 0; i < _extraKeyControllers.length; i++) ...[
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Expanded(
+                          flex: 4,
+                          child: TextFormField(
+                            controller: _extraKeyControllers[i],
+                            decoration: const InputDecoration(
+                              labelText: 'Klucz',
+                              border: OutlineInputBorder(),
+                            ),
+                            validator: (value) {
+                              final v = (value ?? '').trim();
+                              final val = _extraValueControllers[i].text.trim();
+                              if (v.isEmpty && val.isNotEmpty) {
+                                return 'Podaj klucz lub usuń wiersz';
+                              }
+                              return null;
+                            },
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          flex: 6,
+                          child: TextFormField(
+                            controller: _extraValueControllers[i],
+                            decoration: const InputDecoration(
+                              labelText: 'Wartość',
+                              border: OutlineInputBorder(),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        IconButton(
+                          onPressed: _isLoading ? null : () => _removeExtraField(i),
+                          icon: const Icon(Icons.delete, color: Colors.red),
+                          tooltip: 'Usuń pole',
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+                  ],
+
                   const SizedBox(height: 24),
                   SizedBox(
                     height: 50,

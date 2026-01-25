@@ -27,6 +27,12 @@ class FirestoreService {
     return null;
   }
 
+  Future<void> updateExtraMetadata(String mapId, Map<String, dynamic> extra) async {
+    await _firestore.collection('satellite_maps').doc(mapId).update({
+      'extraMetadata': extra,
+    });
+  }
+
   Future<String> addMap(SatelliteMap map) async {
     final docRef = await _firestore.collection('satellite_maps').add(map.toFirestore());
     return docRef.id;

@@ -24,7 +24,6 @@ class _MapDetailScreenState extends ConsumerState<MapDetailScreen> {
     Future.microtask(() async {
       try {
         await ref.read(cloudFunctionsServiceProvider).recordMapView(widget.mapId);
-        // Invalidate the provider to refetch the updated data
         ref.invalidate(mapProvider(widget.mapId));
       } catch (e) {
         print('Błąd rejestracji wyświetlenia: $e');
@@ -54,6 +53,10 @@ class _MapDetailScreenState extends ConsumerState<MapDetailScreen> {
               child: Text('Mapa nie została znaleziona'),
             );
           }
+
+          final extraMetadata = map.extraMetadata;
+          final extraKeys = extraMetadata.keys.toList()
+            ..sort((a, b) => a.toLowerCase().compareTo(b.toLowerCase()));
 
           return SingleChildScrollView(
             child: Column(
@@ -172,9 +175,25 @@ class _MapDetailScreenState extends ConsumerState<MapDetailScreen> {
                         _buildMetadataRow(
                           'Data pozyskania',
                           DateFormat('dd.MM.yyyy').format(map.metadata.acquisitionDate),
-                          null,
+                          map.metadataDescriptions['acquisitionDate'],
                         ),
                         _buildMetadataRow('Nazwa pliku', map.fileName, null),
+
+                        if (extraKeys.isNotEmpty) ...[
+                          const SizedBox(height: 16),
+                          const Text(
+                            'Dodatkowe metadane',
+                            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                          ),
+                          const Divider(),
+                          for (final key in extraKeys)
+                            _buildMetadataRow(
+                              key,
+                              (extraMetadata[key] ?? '').toString(),
+                              null,
+                            ),
+                        ],
+
                         const SizedBox(height: 16),
                         const Text(
                           'Statystyki',
@@ -309,7 +328,7 @@ class _MapDetailScreenState extends ConsumerState<MapDetailScreen> {
 
         final fileName = map.storageUrl.split('/o/')[1].split('?')[0];
         final decodedFileName = Uri.decodeComponent(fileName);
-        
+
         await storageService.deleteFile(decodedFileName);
         await firestoreService.deleteMap(widget.mapId);
 
