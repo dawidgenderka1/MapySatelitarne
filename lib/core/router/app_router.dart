@@ -5,7 +5,6 @@ import '../../screens/maps/maps_list_screen.dart';
 import '../../screens/maps/map_detail_screen.dart';
 import '../../screens/maps/map_viewer_screen.dart';
 import '../../screens/metadata/metadata_edit_screen.dart';
-import '../../screens/admin/upload_map_screen.dart';
 
 final appRouter = GoRouter(
   initialLocation: '/login',
@@ -52,11 +51,6 @@ final appRouter = GoRouter(
         final mapId = state.pathParameters['id']!;
         return MetadataEditScreen(mapId: mapId);
       },
-    ),
-    GoRoute(
-      path: '/upload',
-      name: 'upload',
-      builder: (context, state) => const UploadMapScreen(),
     ),
   ],
 );

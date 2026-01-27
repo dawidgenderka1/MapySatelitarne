@@ -92,14 +92,6 @@ class MapsListScreen extends ConsumerWidget {
           ),
         ),
       ),
-      floatingActionButton: userDataAsync.value?.canDelete == true
-          ? FloatingActionButton(
-              onPressed: () {
-                context.go('/upload');
-              },
-              child: const Icon(Icons.add),
-            )
-          : null,
     );
   }
 }

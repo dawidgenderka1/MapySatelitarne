@@ -178,6 +178,12 @@ class _MapDetailScreenState extends ConsumerState<MapDetailScreen> {
                           map.metadataDescriptions['acquisitionDate'],
                         ),
                         _buildMetadataRow('Nazwa pliku', map.fileName, null),
+                        _buildMetadataRow(
+                          'Rozszerzenie',
+                          _fileExtension(map.fileName),
+                          'Wykryty typ: ${_fileType(map.fileName)}',
+                          immutable: true,
+                        ),
 
                         if (extraKeys.isNotEmpty) ...[
                           const SizedBox(height: 16),
@@ -257,7 +263,8 @@ class _MapDetailScreenState extends ConsumerState<MapDetailScreen> {
     );
   }
 
-  Widget _buildMetadataRow(String label, String value, String? description) {
+  Widget _buildMetadataRow(String label, String value, String? description, {bool immutable = false}) {
+    final desc = description ?? (immutable ? 'Metadana systemowa — nie można modyfikować.' : null);
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8.0),
       child: Column(
@@ -277,18 +284,36 @@ class _MapDetailScreenState extends ConsumerState<MapDetailScreen> {
                 ),
               ),
               Expanded(
-                child: Text(
-                  value,
-                  style: const TextStyle(fontSize: 16),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Expanded(
+                      child: Text(
+                        value,
+                        style: TextStyle(
+                          fontSize: 16,
+                          color: immutable ? Colors.black87.withOpacity(0.8) : Colors.black,
+                        ),
+                      ),
+                    ),
+                    if (immutable)
+                      Padding(
+                        padding: const EdgeInsets.only(left: 8.0, top: 2.0),
+                        child: Tooltip(
+                          message: 'Nie można edytować tej metadanej',
+                          child: Icon(Icons.lock, size: 16, color: Colors.grey[600]),
+                        ),
+                      ),
+                  ],
                 ),
               ),
             ],
           ),
-          if (description != null)
+          if (desc != null)
             Padding(
               padding: const EdgeInsets.only(left: 140, top: 4),
               child: Text(
-                description,
+                desc,
                 style: const TextStyle(
                   fontSize: 12,
                   color: Colors.grey,
@@ -299,6 +324,45 @@ class _MapDetailScreenState extends ConsumerState<MapDetailScreen> {
         ],
       ),
     );
+  }
+
+    // Dodane funkcje pomocnicze do wykrywania rozszerzenia i typu pliku
+  String _fileExtension(String fileName) {
+    final idx = fileName.lastIndexOf('.');
+    if (idx == -1 || idx == fileName.length - 1) return 'brak';
+    return fileName.substring(idx + 1).toLowerCase();
+  }
+
+    String _fileType(String fileName) {
+    final ext = _fileExtension(fileName);
+    if (ext == 'brak') return 'Nieznany';
+    switch (ext) {
+      case 'tif':
+      case 'tiff':
+        return 'TIFF';
+      case 'jp2':
+        return 'JPEG 2000';
+      case 'jpg':
+      case 'jpeg':
+        return 'JPEG';
+      case 'png':
+        return 'PNG';
+      case 'geojson':
+        return 'GeoJSON';
+      case 'json':
+        return 'JSON';
+      case 'kml':
+        return 'KML';
+      case 'shp':
+        return 'Shapefile (SHP)';
+      case 'zip':
+        return 'ZIP (możliwy shapefile lub pakiet danych)';
+      case 'tifw':
+      case 'tfw':
+        return 'World File';
+      default:
+        return ext.toUpperCase();
+    }
   }
 
   Future<void> _showDeleteConfirmation(BuildContext context, SatelliteMap map) async {
