@@ -27,13 +27,8 @@
         margin: 24px auto;
         padding: 0 14px 30px;
       }
-      .header{
-        margin-bottom: 14px;
-      }
-      .title{
-        margin:0;
-        font-size: 24px;
-      }
+      .header{ margin-bottom: 14px; }
+      .title{ margin:0; font-size: 24px; }
       .subtitle{
         margin: 6px 0 0;
         color: var(--muted);
@@ -60,12 +55,8 @@
         font-size: 13px;
         margin-bottom: 6px;
       }
-      .help{
-        color: var(--muted);
-        font-size: 12px;
-        margin-top: 6px;
-      }
-      input[type="text"], input[type="date"], input[type="file"]{
+      .help{ color: var(--muted); font-size: 12px; margin-top: 6px; }
+      input[type="text"], input[type="date"], input[type="file"], select{
         width: 100%;
         padding: 10px 10px;
         border-radius: 8px;
@@ -74,20 +65,12 @@
         color: var(--text);
         outline: none;
       }
-      input[type="text"]:focus, input[type="date"]:focus, input[type="file"]:focus{
+      input[type="text"]:focus, input[type="date"]:focus, input[type="file"]:focus, select:focus{
         border-color: rgba(59,130,246,.7);
         box-shadow: 0 0 0 3px rgba(59,130,246,.15);
       }
-      .sectionTitle{
-        margin: 0 0 10px;
-        font-size: 14px;
-        font-weight: 800;
-      }
-      .divider{
-        height:1px;
-        background: var(--line);
-        margin: 14px 0;
-      }
+      .sectionTitle{ margin: 0 0 10px; font-size: 14px; font-weight: 800; }
+      .divider{ height:1px; background: var(--line); margin: 14px 0; }
       .metaRow{
         display:grid;
         grid-template-columns: 1fr 1.4fr auto;
@@ -113,19 +96,13 @@
         cursor: pointer;
         background: #fff;
       }
-      button:disabled{
-        opacity: .65;
-        cursor: not-allowed;
-      }
+      button:disabled{ opacity: .65; cursor: not-allowed; }
       .btnPrimary{
         border-color: rgba(59,130,246,.4);
         background: rgba(59,130,246,.1);
         color: #1e3a8a;
       }
-      .btnSecondary{
-        background: #fff;
-        color: var(--text);
-      }
+      .btnSecondary{ background: #fff; color: var(--text); }
       .btnDanger{
         border-color: rgba(239,68,68,.35);
         background: rgba(239,68,68,.08);
@@ -166,18 +143,34 @@
         animation: spin .8s linear infinite;
         vertical-align: -2px;
       }
-      @keyframes spin{
-        to{ transform: rotate(360deg); }
-      }
-      .badge{
-        display:inline-block;
-        padding: 5px 8px;
-        font-size: 12px;
-        border-radius: 999px;
+      @keyframes spin{ to{ transform: rotate(360deg); } }
+
+      .fileCard{
         border: 1px solid var(--line);
-        color: var(--muted);
+        border-radius: 10px;
+        padding: 12px;
+        margin-top: 12px;
         background: #fff;
-        margin-top: 6px;
+      }
+      .fileHead{
+        display:flex;
+        gap:10px;
+        align-items: baseline;
+        justify-content: space-between;
+        flex-wrap: wrap;
+      }
+      .fileTitle{
+        margin:0;
+        font-size: 14px;
+        font-weight: 800;
+      }
+      .muted{ color: var(--muted); font-size: 12px; }
+      .miniBtnRow{
+        display:flex;
+        gap:10px;
+        flex-wrap: wrap;
+        justify-content: flex-end;
+        margin-top: 10px;
       }
     </style>
   </head>
@@ -185,60 +178,94 @@
     <div class="wrap">
       <div class="header">
         <h1 class="title">Upload mapy satelitarnej</h1>
-        <p class="subtitle">
-          Formularz do dodawania map i metadanych do Firestore/Storage.
-        </p>
+        <p class="subtitle">Single lub batch (wiele plików) z metadanymi per plik.</p>
       </div>
 
       <div class="card">
         <form id="uploadForm" enctype="multipart/form-data">
-          <div class="sectionTitle">Dane podstawowe (wymagane)</div>
+
+          <div class="sectionTitle">Tryb uploadu</div>
           <div class="grid">
             <div>
-              <label>Plik mapy *</label>
-              <input type="file" name="file" required />
+              <label>Tryb *</label>
+              <select name="mode" id="modeSelect" required>
+                <option value="single">Pojedynczy</option>
+                <option value="batch">Batch (wiele map)</option>
+              </select>
+              <div class="help">W batch metadane wpisujesz osobno dla każdego pliku.</div>
             </div>
-
             <div>
               <label>uploadedBy *</label>
               <input type="text" name="uploadedBy" required placeholder="np. UID użytkownika" />
-            </div>
-
-            <div>
-              <label>Tytuł *</label>
-              <input type="text" name="title" required />
-            </div>
-
-            <div>
-              <label>Źródło *</label>
-              <input type="text" name="source" required />
-            </div>
-
-            <div>
-              <label>Region *</label>
-              <input type="text" name="region" required />
-            </div>
-
-            <div>
-              <label>Data pozyskania *</label>
-              <input type="date" name="acquisitionDate" required />
-            </div>
-
-            <div style="grid-column: 1 / -1;">
-              <label>Opis *</label>
-              <input type="text" name="description" required />
+              <div class="help">W batch jest wspólne dla całej paczki.</div>
             </div>
           </div>
 
           <div class="divider"></div>
 
-          <div class="sectionTitle">Dodatkowe metadane (opcjonalne)</div>
-          <div class="help">Dodaj pary klucz → wartość. Puste klucze są ignorowane.</div>
+          <!-- SINGLE -->
+          <div id="singleBlock">
+            <div class="sectionTitle">Dane podstawowe (single)</div>
+            <div class="grid">
+              <div>
+                <label>Plik mapy *</label>
+                <input type="file" name="file" id="singleFile" required />
+              </div>
 
-          <div id="fields"></div>
+              <div>
+                <label>Tytuł *</label>
+                <input type="text" name="title" required />
+              </div>
+
+              <div>
+                <label>Źródło *</label>
+                <input type="text" name="source" required />
+              </div>
+
+              <div>
+                <label>Region *</label>
+                <input type="text" name="region" required />
+              </div>
+
+              <div>
+                <label>Data pozyskania *</label>
+                <input type="date" name="acquisitionDate" required />
+              </div>
+
+              <div style="grid-column: 1 / -1;">
+                <label>Opis *</label>
+                <input type="text" name="description" required />
+              </div>
+            </div>
+
+            <div class="divider"></div>
+
+            <div class="sectionTitle">Dodatkowe metadane (single, opcjonalne)</div>
+            <div class="help">Dodaj pary klucz → wartość. Puste klucze są ignorowane.</div>
+            <div id="singleExtraFields"></div>
+
+            <div class="miniBtnRow">
+              <button class="btnSecondary" type="button" id="singleAddBtn">Dodaj pole</button>
+            </div>
+          </div>
+
+          <!-- BATCH -->
+          <div id="batchBlock" style="display:none;">
+            <div class="sectionTitle">Pliki (batch)</div>
+            <div class="grid">
+              <div style="grid-column: 1 / -1;">
+                <label>Pliki map *</label>
+                <input type="file" name="files[]" id="batchFiles" multiple />
+                <div class="help">Po wybraniu plików pojawią się sekcje metadanych dla każdego pliku.</div>
+              </div>
+            </div>
+
+            <div class="divider"></div>
+            <div class="sectionTitle">Metadane per plik (batch)</div>
+            <div id="batchPerFile"></div>
+          </div>
 
           <div class="btnRow">
-            <button class="btnSecondary" type="button" id="addBtn">Dodaj pole</button>
             <button class="btnDanger" type="button" id="clearBtn">Wyczyść formularz</button>
             <button class="btnPrimary" type="submit" id="submitBtn">
               <span id="submitIcon">Wyślij</span>
@@ -252,8 +279,17 @@
 
     <script>
       const form = document.getElementById("uploadForm");
-      const fields = document.getElementById("fields");
-      const addBtn = document.getElementById("addBtn");
+      const modeSelect = document.getElementById("modeSelect");
+
+      const singleBlock = document.getElementById("singleBlock");
+      const batchBlock = document.getElementById("batchBlock");
+
+      const batchFiles = document.getElementById("batchFiles");
+      const batchPerFile = document.getElementById("batchPerFile");
+
+      const singleExtraFields = document.getElementById("singleExtraFields");
+      const singleAddBtn = document.getElementById("singleAddBtn");
+
       const clearBtn = document.getElementById("clearBtn");
       const submitBtn = document.getElementById("submitBtn");
       const submitIcon = document.getElementById("submitIcon");
@@ -280,7 +316,7 @@
           .replaceAll("'", "&#039;");
       }
 
-      function addField(keyVal = "", valueVal = "") {
+      function addSingleExtraField(keyVal = "", valueVal = "") {
         const row = document.createElement("div");
         row.className = "metaRow";
 
@@ -305,30 +341,199 @@
         row.appendChild(key);
         row.appendChild(value);
         row.appendChild(remove);
-
-        fields.appendChild(row);
+        singleExtraFields.appendChild(row);
       }
+
+      singleAddBtn.addEventListener("click", () => addSingleExtraField());
+      addSingleExtraField();
+
+      function addBatchExtraField(container, idx, keyVal = "", valueVal = "") {
+        const row = document.createElement("div");
+        row.className = "metaRow";
+
+        const key = document.createElement("input");
+        key.type = "text";
+        key.name = `meta_key_${idx}[]`;
+        key.placeholder = "klucz";
+        key.value = keyVal;
+
+        const value = document.createElement("input");
+        value.type = "text";
+        value.name = `meta_value_${idx}[]`;
+        value.placeholder = "wartość";
+        value.value = valueVal;
+
+        const remove = document.createElement("button");
+        remove.type = "button";
+        remove.className = "btnSecondary";
+        remove.textContent = "Usuń";
+        remove.onclick = () => row.remove();
+
+        row.appendChild(key);
+        row.appendChild(value);
+        row.appendChild(remove);
+        container.appendChild(row);
+      }
+
+      function buildBatchPerFileSections(files) {
+        batchPerFile.innerHTML = "";
+
+        if (!files || files.length === 0) {
+          const p = document.createElement("div");
+          p.className = "muted";
+          p.textContent = "Wybierz pliki, żeby uzupełnić metadane.";
+          batchPerFile.appendChild(p);
+          return;
+        }
+
+        [...files].forEach((file, idx) => {
+          const card = document.createElement("div");
+          card.className = "fileCard";
+
+          const head = document.createElement("div");
+          head.className = "fileHead";
+
+          const h = document.createElement("h3");
+          h.className = "fileTitle";
+          h.textContent = `Plik #${idx + 1}: ${file.name}`;
+
+          const small = document.createElement("div");
+          small.className = "muted";
+          small.textContent = `${Math.round(file.size/1024)} KB`;
+
+          head.appendChild(h);
+          head.appendChild(small);
+
+          const grid = document.createElement("div");
+          grid.className = "grid";
+          grid.style.marginTop = "10px";
+
+          grid.innerHTML = `
+            <div>
+              <label>Tytuł *</label>
+              <input type="text" name="title_${idx}" required />
+            </div>
+            <div>
+              <label>Źródło *</label>
+              <input type="text" name="source_${idx}" required />
+            </div>
+            <div>
+              <label>Region *</label>
+              <input type="text" name="region_${idx}" required />
+            </div>
+            <div>
+              <label>Data pozyskania *</label>
+              <input type="date" name="acquisitionDate_${idx}" required />
+            </div>
+            <div style="grid-column: 1 / -1;">
+              <label>Opis *</label>
+              <input type="text" name="description_${idx}" required />
+            </div>
+          `;
+
+          const divider = document.createElement("div");
+          divider.className = "divider";
+
+          const sec = document.createElement("div");
+          sec.className = "sectionTitle";
+          sec.textContent = "Dodatkowe metadane (opcjonalne)";
+
+          const help = document.createElement("div");
+          help.className = "help";
+          help.textContent = "Pary klucz → wartość dla tego pliku.";
+
+          const extras = document.createElement("div");
+
+          const mini = document.createElement("div");
+          mini.className = "miniBtnRow";
+
+          const addBtn = document.createElement("button");
+          addBtn.type = "button";
+          addBtn.className = "btnSecondary";
+          addBtn.textContent = "Dodaj pole";
+          addBtn.onclick = () => addBatchExtraField(extras, idx);
+
+          mini.appendChild(addBtn);
+
+          addBatchExtraField(extras, idx);
+
+          card.appendChild(head);
+          card.appendChild(grid);
+          card.appendChild(divider);
+          card.appendChild(sec);
+          card.appendChild(help);
+          card.appendChild(extras);
+          card.appendChild(mini);
+
+          batchPerFile.appendChild(card);
+        });
+      }
+
+      batchFiles.addEventListener("change", () => {
+        buildBatchPerFileSections(batchFiles.files);
+      });
+
+      function setMode(mode) {
+        if (mode === "batch") {
+          singleBlock.style.display = "none";
+          batchBlock.style.display = "block";
+
+          singleBlock.querySelectorAll("[required]").forEach(el => el.dataset.wasRequired = "1");
+          singleBlock.querySelectorAll("[required]").forEach(el => el.removeAttribute("required"));
+
+          batchFiles.required = true;
+
+          buildBatchPerFileSections(batchFiles.files);
+        } else {
+          batchBlock.style.display = "none";
+          singleBlock.style.display = "block";
+
+          singleBlock.querySelectorAll("[data-was-required='1']").forEach(el => {
+            el.setAttribute("required", "");
+            delete el.dataset.wasRequired;
+          });
+
+          batchFiles.required = false;
+        }
+      }
+
+      modeSelect.addEventListener("change", () => {
+        clearStatus();
+        setMode(modeSelect.value);
+      });
+
+      setMode(modeSelect.value);
 
       function clearForm() {
         form.reset();
-        fields.innerHTML = "";
-        addField();
         clearStatus();
+
+        singleExtraFields.innerHTML = "";
+        addSingleExtraField();
+
+        batchPerFile.innerHTML = "";
+        setMode(modeSelect.value);
       }
 
-      addBtn.addEventListener("click", () => addField());
       clearBtn.addEventListener("click", clearForm);
-
-      addField();
 
       form.addEventListener("submit", async (e) => {
         e.preventDefault();
         clearStatus();
 
-        const fileInput = form.querySelector('input[name="file"]');
-        if (!fileInput || !fileInput.files || fileInput.files.length === 0) {
-          setStatus("err", "Brak pliku", "Wybierz plik mapy.");
-          return;
+        const mode = modeSelect.value;
+
+        if (mode === "batch") {
+          if (!batchFiles.files || batchFiles.files.length === 0) {
+            setStatus("err", "Brak plików", "Wybierz przynajmniej jeden plik mapy.");
+            return;
+          }
+        } else {
+          const singleFile = document.getElementById("singleFile");
+          if (!singleFile.files || singleFile.files.length === 0) {
+            setStatus("err", "Brak pliku", "Wybierz plik mapy.");
+            return;
+          }
         }
 
         submitBtn.disabled = true;
@@ -346,21 +551,32 @@
           let payload = null;
           try { payload = JSON.parse(text); } catch (_) {}
 
-          if (!resp.ok) {
+          if (!resp.ok && resp.status !== 207) {
             const msg = payload?.error || "Wystąpił błąd wysyłania.";
-            setStatus(
-              "err",
-              "Nie udało się wysłać",
-              msg + (payload?.missing ? ("\nBrakuje: " + payload.missing.join(", ")) : "")
-            );
+            setStatus("err", "Nie udało się wysłać", msg + (payload?.missing ? ("\nBrakuje: " + payload.missing.join(", ")) : ""));
             return;
           }
 
-          const id = payload?.id ?? "(brak id)";
-          const fileName = payload?.fileName ?? "(brak fileName)";
-          const url = payload?.storageUrl ?? "(brak storageUrl)";
+          const results = payload?.results || [];
+          const errors = payload?.errors || [];
 
-          setStatus("ok", "Wysłano ✅", "ID: " + id + "\nfileName: " + fileName + "\nstorageUrl: " + url);
+          let details = "";
+          if (results.length) {
+            details += "Zapisane:\n" + results.map(r => `#${(r.index ?? 0)+1} id=${r.id} fileName=${r.fileName}`).join("\n") + "\n";
+          }
+          if (errors.length) {
+            details += "\nBłędy:\n" + errors.map(er => {
+              const miss = er.missing ? (" missing=" + er.missing.join(",")) : "";
+              return `#${(er.index ?? 0)+1} ${er.error}${miss}`;
+            }).join("\n");
+          }
+
+          if (errors.length && results.length) {
+            setStatus("err", "Częściowo wysłano (207) ⚠️", details.trim());
+          } else {
+            setStatus("ok", "Wysłano ✅", details.trim() || "OK");
+          }
+
         } catch (err) {
           setStatus("err", "Błąd połączenia", String(err));
         } finally {
